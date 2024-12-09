@@ -47,12 +47,11 @@ export default function NoteEditor() {
         updatedAt: new Date(),
       });
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        'code' in error &&
-        (error as any).code !== 'not-found'
-      ) {
-        console.error('Error saving note:', error);
+      if (error && typeof error === 'object' && 'code' in error) {
+        const typedError = error as { code: string };
+        if (typedError.code !== 'not-found') {
+          console.error('Error saving note:', typedError);
+        }
       }
     } finally {
       setIsSaving(false);
