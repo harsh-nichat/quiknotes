@@ -46,8 +46,12 @@ export default function NoteEditor() {
         content,
         updatedAt: new Date(),
       });
-    } catch (error: any) {
-      if (error.code !== 'not-found') {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error as any).code !== 'not-found'
+      ) {
         console.error('Error saving note:', error);
       }
     } finally {
