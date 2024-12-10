@@ -6,6 +6,7 @@ import { NotesProvider } from '@/context/NotesContext';
 import ThemeToggle from './components/ThemeToggle';
 import MenuButton from './components/MenuButton';
 import { useState } from 'react';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
 
 // Dynamic imports with no-ssr
 const Sidebar = dynamic(() => import('./components/Sidebar'), { 
@@ -33,6 +34,7 @@ export default function Home() {
 
       <SignedIn>
         <NotesProvider>
+          <KeyboardShortcuts />
           <div className="flex h-screen">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             <div className="flex-1">

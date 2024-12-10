@@ -2,16 +2,9 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useUser } from '@clerk/nextjs';
-
-type Note = {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  userId: string;
-};
+import type { Note } from '@/types/note';
 
 type NotesContextType = {
   notes: Note[];
@@ -19,6 +12,10 @@ type NotesContextType = {
   setActiveNoteId: (id: string | null) => void;
   createNote: (title: string, content: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
+  searchNotes: (query: string) => void;
+  togglePinNote: (id: string) => Promise<void>;
+  searchQuery: string;
+  filteredNotes: Note[];
 };
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -27,6 +24,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const { user } = useUser();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -40,14 +39,23 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       const newNotes = snapshot.docs
         .map(doc => ({
           id: doc.id,
-          title: doc.data().title,
-          content: doc.data().content,
+          title: doc.data().title || '',
+          content: doc.data().content || '',
           userId: doc.data().userId,
-          createdAt: doc.data().createdAt?.toDate()
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          isPinned: doc.data().isPinned || false,
+          updatedAt: doc.data().updatedAt?.toDate() || new Date()
         }))
-        .filter(note => note.userId === user.id) as Note[];
+        .filter(note => note.userId === user.id);
       
-      setNotes(newNotes);
+      const sortedNotes = [...newNotes].sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+      
+      setNotes(sortedNotes);
+      setFilteredNotes(sortedNotes);
     });
 
     return () => unsubscribe();
@@ -61,13 +69,16 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
     try {
       console.log('Creating note for user:', user.id);
-      const newNote = await addDoc(collection(db, 'notes'), {
+      const noteData = {
         title,
         content,
         userId: user.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+        isPinned: false
+      };
+
+      const newNote = await addDoc(collection(db, 'notes'), noteData);
       console.log('Note created with ID:', newNote.id);
       setActiveNoteId(newNote.id);
     } catch (error) {
@@ -89,13 +100,62 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const searchNotes = (query: string) => {
+    setSearchQuery(query);
+    const filtered = notes.filter(note => 
+      note.title.toLowerCase().includes(query.toLowerCase()) ||
+      note.content.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredNotes(filtered);
+  };
+
+  const togglePinNote = async (id: string) => {
+    if (!user) {
+      console.log('No user found');
+      return;
+    }
+    
+    try {
+      const noteRef = doc(db, 'notes', id);
+      const note = notes.find(n => n.id === id);
+      console.log('Current note:', note); // Debug log
+
+      if (note) {
+        const newPinnedState = !note.isPinned;
+        console.log('Toggling pin state to:', newPinnedState); // Debug log
+        
+        await updateDoc(noteRef, {
+          isPinned: newPinnedState,
+          updatedAt: serverTimestamp(),
+        });
+        
+        // Update local state immediately for better UX
+        setNotes(notes.map(n => 
+          n.id === id 
+            ? {...n, isPinned: newPinnedState} 
+            : n
+        ));
+
+        console.log(`Note ${id} ${newPinnedState ? 'pinned' : 'unpinned'}`);
+      } else {
+        console.log('Note not found:', id); // Debug log
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+    }
+  };
+
   return (
     <NotesContext.Provider value={{ 
       notes, 
       activeNoteId, 
       setActiveNoteId, 
       createNote,
-      deleteNote
+      deleteNote,
+      searchNotes,
+      togglePinNote,
+      searchQuery,
+      filteredNotes,
     }}>
       {children}
     </NotesContext.Provider>
