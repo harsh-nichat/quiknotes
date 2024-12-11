@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
 import { useUser } from '@clerk/nextjs';
 import type { Note } from '@/types/note';
 
@@ -35,31 +35,44 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newNotes = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          title: doc.data().title || '',
-          content: doc.data().content || '',
-          userId: doc.data().userId,
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-          isPinned: doc.data().isPinned || false,
-          updatedAt: doc.data().updatedAt?.toDate() || new Date()
-        }))
-        .filter(note => note.userId === user.id);
-      
-      const sortedNotes = [...newNotes].sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      });
-      
-      setNotes(sortedNotes);
-      setFilteredNotes(sortedNotes);
-    });
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const newNotes = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            title: doc.data().title || '',
+            content: doc.data().content || '',
+            userId: doc.data().userId,
+            createdAt: doc.data().createdAt?.toDate() || new Date(),
+            isPinned: doc.data().isPinned || false,
+            updatedAt: doc.data().updatedAt?.toDate() || new Date()
+          }))
+          .filter(note => note.userId === user.id);
+        
+        const sortedNotes = [...newNotes].sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+        
+        setNotes(sortedNotes);
+        if (!searchQuery) {
+          setFilteredNotes(sortedNotes);
+        } else {
+          const filtered = sortedNotes.filter(note => 
+            note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            note.content.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setFilteredNotes(filtered);
+        }
+      },
+      (error) => {
+        console.error('Error fetching notes:', error);
+      }
+    );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, searchQuery]);
 
   const createNote = async (title: string, content: string) => {
     if (!user) {
