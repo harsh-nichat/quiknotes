@@ -35,11 +35,11 @@ export default function Home() {
       <SignedIn>
         <NotesProvider>
           <KeyboardShortcuts />
-          <div className="flex h-screen">
+          <div className="flex h-screen overflow-hidden">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            <div className="flex-1">
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-4">
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-4 border-b dark:border-gray-800">
+                <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
                     <MenuButton onClick={() => setIsSidebarOpen(true)} />
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Quiknotes</h1>
@@ -49,6 +49,8 @@ export default function Home() {
                     <UserButton />
                   </div>
                 </div>
+              </div>
+              <div className="flex-1 overflow-auto">
                 <NoteEditor />
               </div>
             </div>

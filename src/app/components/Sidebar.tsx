@@ -111,54 +111,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const unpinnedNotes = sortedNotes.filter(note => !note.isPinned);
 
   return (
-    <>
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity lg:hidden z-20"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed lg:static inset-y-0 left-0 z-30
-        w-64 h-screen bg-gray-100 dark:bg-gray-800 p-4 
-        border-r border-gray-200 dark:border-gray-700
-        transform transition-transform duration-300 ease-in-out
-        lg:transform-none
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div className="flex justify-between items-center mb-4 lg:hidden">
-          <h2 className="font-bold text-gray-700 dark:text-gray-200">Menu</h2>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            <XMarkIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </button>
-        </div>
-
-        <button 
-          onClick={handleNewNote}
-          className="w-full bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-md mb-4 hover:bg-blue-600 dark:hover:bg-blue-700"
-        >
-          New Note
-        </button>
-        
-        <div className="space-y-4">
+    <div
+      className={`fixed md:relative top-0 left-0 h-screen bg-gray-100 dark:bg-gray-800 w-64 transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}
+    >
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={handleNewNote}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              New Note
+            </button>
+            <button onClick={onClose} className="md:hidden">
+              <XMarkIcon className="h-6 w-6 text-gray-500" />
+            </button>
+          </div>
           <input
-            type="search"
+            type="text"
             placeholder="Search notes..."
-            className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 
-              text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 rounded border text-black dark:text-gray-100 dark:border-gray-600 dark:bg-gray-700 placeholder:text-gray-500 dark:placeholder:text-gray-400"
             value={searchQuery}
             onChange={(e) => searchNotes(e.target.value)}
           />
-          
-          {/* Render pinned notes first */}
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {/* Pinned Notes Section */}
           {pinnedNotes.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Pinned Notes
               </h3>
@@ -166,19 +148,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           )}
           
-          {/* Render unpinned notes */}
-          {unpinnedNotes.length > 0 && (
-            <div>
-              {pinnedNotes.length > 0 && (
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Other Notes
-                </h3>
-              )}
-              {renderNotesList(unpinnedNotes)}
-            </div>
-          )}
+          {/* Other Notes Section */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              {pinnedNotes.length > 0 ? 'Other Notes' : 'Notes'}
+            </h3>
+            {renderNotesList(unpinnedNotes)}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
-} 
+}

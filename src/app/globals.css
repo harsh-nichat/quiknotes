@@ -18,3 +18,69 @@ body {
   color: var(--foreground);
   background: var(--background);
 }
+
+@layer base {
+  h1 {
+    @apply text-2xl font-bold mb-4;
+  }
+  h2 {
+    @apply text-xl font-bold mb-3;
+  }
+  blockquote {
+    @apply pl-4 border-l-4 border-gray-300 dark:border-gray-600 my-4 italic;
+  }
+  pre {
+    @apply bg-gray-100 dark:bg-gray-800 p-4 rounded my-4;
+  }
+  code {
+    @apply font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded;
+  }
+}
+
+.ProseMirror {
+  > * + * {
+    @apply mt-4;
+  }
+  
+  ul {
+    @apply pl-6 mb-4 list-none;
+    li {
+      @apply relative;
+      &::before {
+        content: "•";
+        @apply absolute -left-4 text-gray-600 dark:text-gray-400;
+      }
+    }
+  }
+  
+  ol {
+    @apply pl-6 mb-4 list-decimal;
+    li {
+      @apply pl-2;
+    }
+  }
+
+  ul li, ol li {
+    @apply mb-1;
+  }
+
+  h1 {
+    @apply text-2xl font-bold mb-4;
+  }
+
+  h2 {
+    @apply text-xl font-bold mb-3;
+  }
+
+  blockquote {
+    @apply pl-4 border-l-4 border-gray-300 dark:border-gray-600 my-4 italic;
+  }
+
+  pre {
+    @apply bg-gray-100 dark:bg-gray-800 p-4 rounded my-4;
+  }
+
+  code {
+    @apply font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded;
+  }
+}
